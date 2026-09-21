@@ -253,7 +253,7 @@ export function NewsDocument() {
                   </Button>
                 </div>
               </>
-            )}
+            ) : null}
           </section>
         </div>
       ) : null}

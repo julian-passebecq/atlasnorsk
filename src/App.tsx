@@ -312,7 +312,7 @@ function VocabularyDocument() {
       && (filters.subcategory === 'All' || entry.subcategory === filters.subcategory)
       && (filters.type === 'All' || entry.type === filters.type);
   });
-  const selected = vocabulary.find((entry) => entry.id === selectedId) ?? rows[0];
+  const selected = rows.find((entry) => entry.id === selectedId) ?? rows[0];
 
   return (
     <article className="document vocabulary-document">

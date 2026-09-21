@@ -29,12 +29,14 @@ import { connectorSkeleton, resources, translation, vocabulary } from './data';
 import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
+import { NewsDocument } from './news';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
 
 const resourceIcon: Record<ResourceType, ReactNode> = {
   translation: <Language20Regular />,
+  news: <Document20Regular />,
   vocabulary: <AppsList20Regular />,
   cheatsheet: <TextBulletList20Regular />,
   grammar: <BookOpen20Regular />,
@@ -110,6 +112,7 @@ function LibrarySidebar({
 
   const sections: { type: ResourceType; label: string }[] = [
     { type: 'translation', label: 'Translations' },
+    { type: 'news', label: 'Daily News' },
     { type: 'vocabulary', label: 'Vocabulary' },
     { type: 'grammar', label: 'Grammar' },
     { type: 'tablebook', label: 'Reference tables' },
@@ -674,6 +677,7 @@ function GenericDocument({ resource }: { resource: Resource }) {
 
 function ResourceDocument({ resource }: { resource: Resource }) {
   if (resource.type === 'translation') return <TranslationDocument />;
+  if (resource.type === 'news') return <NewsDocument />;
   if (resource.type === 'vocabulary') return <VocabularyDocument />;
   if (resource.type === 'cheatsheet') return <CheatSheetDocument />;
   if (resource.type === 'grammar') return <GrammarDocument resource={resource} />;
@@ -685,6 +689,8 @@ function ResourceDocument({ resource }: { resource: Resource }) {
 function Inspector({ resource }: { resource: Resource }) {
   const actions = resource.type === 'translation'
     ? ['Translate', 'Correct', 'More natural', 'Simplify', 'Explain grammar', 'Extract vocabulary']
+    : resource.type === 'news'
+      ? ['Translate article', 'Simplify to B1', 'Raise to B2', 'Explain sentence', 'Extract vocabulary', 'Extract grammar']
     : resource.type === 'vocabulary'
       ? ['Add example', 'Classify', 'Find related', 'Change level', 'Add to cheat sheet']
       : resource.type === 'cheatsheet'

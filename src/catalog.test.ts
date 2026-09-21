@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { vocabulary } from './data';
+import { grammarTopics } from './grammar';
+import { tableBooks } from './tablebooks';
 
 function normalize(value: string) {
   return value
@@ -25,5 +27,20 @@ describe('AtlasNorsk seed model', () => {
 
   it('has trilingual values for every seed term', () => {
     expect(vocabulary.every((entry) => entry.norsk && entry.english && entry.french)).toBe(true);
+  });
+  it('keeps grammar topic ids unique', () => {
+    expect(new Set(grammarTopics.map((topic) => topic.id)).size).toBe(grammarTopics.length);
+  });
+
+  it('ships only the three curated reference table books', () => {
+    expect(tableBooks.map((book) => book.id)).toEqual([
+      'tablebook-a2b1-core',
+      'tablebook-b2-toolbox',
+      'tablebook-grammar-patterns',
+    ]);
+  });
+
+  it('keeps table book tab ids unique inside each book', () => {
+    expect(tableBooks.every((book) => new Set(book.tabs.map((tab) => tab.id)).size === book.tabs.length)).toBe(true);
   });
 });

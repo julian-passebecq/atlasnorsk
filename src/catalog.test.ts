@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { vocabulary } from './data';
+import { resources, vocabulary } from './data';
 import { grammarTopics } from './grammar';
-import { tableBooks } from './tablebooks';
+import { tableBooks, tableBookForResource } from './tablebooks';
 
 function normalize(value: string) {
   return value
@@ -15,6 +15,16 @@ function normalize(value: string) {
 }
 
 describe('AtlasNorsk seed model', () => {
+  it('keeps resource ids unique and required resource fields non-empty', () => {
+    expect(new Set(resources.map((resource) => resource.id)).size).toBe(resources.length);
+    expect(resources.every((resource) =>
+      resource.id.trim()
+      && resource.title.trim()
+      && resource.workspace.trim()
+      && resource.updatedAt.trim(),
+    )).toBe(true);
+  });
+
   it('keeps stable unique vocabulary ids', () => {
     expect(new Set(vocabulary.map((entry) => entry.id)).size).toBe(vocabulary.length);
   });
@@ -42,5 +52,16 @@ describe('AtlasNorsk seed model', () => {
 
   it('keeps table book tab ids unique inside each book', () => {
     expect(tableBooks.every((book) => new Set(book.tabs.map((tab) => tab.id)).size === book.tabs.length)).toBe(true);
+  });
+
+  it('keeps table book catalog resources and payloads in one-to-one sync', () => {
+    const resourceIds = resources
+      .filter((resource) => resource.type === 'tablebook')
+      .map((resource) => resource.id)
+      .sort();
+    const payloadIds = tableBooks.map((book) => book.id).sort();
+
+    expect(resourceIds).toEqual(payloadIds);
+    expect(resourceIds.every((id) => tableBookForResource(id))).toBe(true);
   });
 });

@@ -29,7 +29,7 @@ import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, workspaceNames } from './workspaceState';
+import { canSplitWorkspace, nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, secondaryResourceForTabs, workspaceNames } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = workspaceNames(resources);
@@ -254,6 +254,7 @@ function TabStrip({
   closeTab,
   split,
   toggleSplit,
+  canSplit,
   onAddTab,
   canAddTab,
 }: {
@@ -263,6 +264,7 @@ function TabStrip({
   closeTab: (id: string) => void;
   split: boolean;
   toggleSplit: () => void;
+  canSplit: boolean;
   onAddTab: () => void;
   canAddTab: boolean;
 }) {
@@ -305,8 +307,13 @@ function TabStrip({
         </button>
       </div>
       <div className="tab-actions">
-        <Tooltip content={split ? 'Close split pane' : 'Split workspace'} relationship="label">
-          <Button appearance="subtle" icon={<SplitHorizontal20Regular />} onClick={toggleSplit} />
+        <Tooltip content={split ? 'Close split pane' : canSplit ? 'Split workspace' : 'Open another tab to split'} relationship="label">
+          <Button
+            appearance="subtle"
+            icon={<SplitHorizontal20Regular />}
+            onClick={toggleSplit}
+            disabled={!split && !canSplit}
+          />
         </Tooltip>
       </div>
     </div>
@@ -858,7 +865,7 @@ export function App() {
   const [secondaryId, setSecondaryId] = useState(resources[2].id);
 
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? resources[0];
-  const secondary = tabs.find((tab) => tab.id === secondaryId) ?? resources[2];
+  const secondary = secondaryResourceForTabs(tabs, secondaryId, active.id);
 
   const activateTab = (id: string) => {
     const tab = tabs.find((candidate) => candidate.id === id);
@@ -893,6 +900,7 @@ export function App() {
     const nextTabs = tabs.filter((tab) => tab.id !== id);
 
     setTabs(nextTabs);
+    if (!canSplitWorkspace(nextTabs)) setSplit(false);
 
     if (nextActive) {
       setActiveId(nextActive.id);
@@ -900,7 +908,7 @@ export function App() {
     }
 
     if (id === secondaryId) {
-      const replacement = nextTabs.find((tab) => tab.id !== nextActive?.id) ?? nextTabs[0];
+      const replacement = secondaryResourceForTabs(nextTabs, '', nextActive?.id ?? '');
       if (replacement) setSecondaryId(replacement.id);
     }
   };
@@ -924,6 +932,7 @@ export function App() {
               closeTab={closeTab}
               split={split}
               toggleSplit={() => setSplit((value) => !value)}
+              canSplit={canSplitWorkspace(tabs)}
               onAddTab={() => {
                 if (nextWorkspaceResource) openResource(nextWorkspaceResource);
               }}
@@ -941,7 +950,7 @@ export function App() {
             </div>
           </section>
 
-          {split ? (
+          {split && secondary ? (
             <section className="pane secondary-pane">
               <div className="secondary-header">
                 <span>Compare / reference</span>

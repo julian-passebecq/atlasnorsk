@@ -29,7 +29,7 @@ import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
-import { nextActiveResourceAfterClose, resourcesForWorkspace } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
@@ -93,11 +93,11 @@ function TopBar({
 
 function LibrarySidebar({
   activeWorkspace,
-  setActiveWorkspace,
+  onWorkspaceChange,
   onOpen,
 }: {
   activeWorkspace: string;
-  setActiveWorkspace: (workspace: string) => void;
+  onWorkspaceChange: (workspace: string) => void;
   onOpen: (resource: Resource) => void;
 }) {
   const workspaceResources = useMemo(
@@ -138,7 +138,7 @@ function LibrarySidebar({
         <Select
           aria-label="Workspace"
           value={activeWorkspace}
-          onChange={(event) => setActiveWorkspace(event.currentTarget.value)}
+          onChange={(event) => onWorkspaceChange(event.currentTarget.value)}
         >
           {workspaces.map((workspace) => <option key={workspace}>{workspace}</option>)}
         </Select>
@@ -784,6 +784,16 @@ export function App() {
     setActiveWorkspace(tab.workspace);
   };
 
+  const switchWorkspace = (workspace: string) => {
+    const next = preferredResourceForWorkspace(tabs, resources, workspace);
+    setActiveWorkspace(workspace);
+
+    if (!next) return;
+
+    setTabs((current) => current.some((tab) => tab.id === next.id) ? current : [...current, next]);
+    setActiveId(next.id);
+  };
+
   const openResource = (resource: Resource) => {
     setTabs((current) => current.some((tab) => tab.id === resource.id) ? current : [...current, resource]);
     setActiveId(resource.id);
@@ -815,7 +825,7 @@ export function App() {
       <div className="app-body">
         <LibrarySidebar
           activeWorkspace={activeWorkspace}
-          setActiveWorkspace={setActiveWorkspace}
+          onWorkspaceChange={switchWorkspace}
           onOpen={openResource}
         />
 

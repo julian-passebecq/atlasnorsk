@@ -99,15 +99,20 @@ function LibrarySidebar({
   setActiveWorkspace: (workspace: string) => void;
   onOpen: (resource: Resource) => void;
 }) {
+  const workspaceResources = useMemo(
+    () => resources.filter((resource) => resource.workspace === activeWorkspace),
+    [activeWorkspace],
+  );
+
   const grouped = useMemo(() => {
     const byType = new Map<ResourceType, Resource[]>();
-    for (const resource of resources) {
+    for (const resource of workspaceResources) {
       const list = byType.get(resource.type) ?? [];
       list.push(resource);
       byType.set(resource.type, list);
     }
     return byType;
-  }, []);
+  }, [workspaceResources]);
 
   const sections: { type: ResourceType; label: string }[] = [
     { type: 'translation', label: 'Translations' },
@@ -142,7 +147,7 @@ function LibrarySidebar({
         <button className="nav-home">
           <Grid20Regular />
           <span>Today</span>
-          <span className="nav-count">4</span>
+          <span className="nav-count">{workspaceResources.length}</span>
         </button>
 
         {sections.map(({ type, label }) => (
@@ -770,6 +775,7 @@ export function App() {
   const openResource = (resource: Resource) => {
     setTabs((current) => current.some((tab) => tab.id === resource.id) ? current : [...current, resource]);
     setActiveId(resource.id);
+    setActiveWorkspace(resource.workspace);
   };
 
   const closeTab = (id: string) => {

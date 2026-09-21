@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Badge,
   Button,
@@ -26,15 +26,18 @@ import {
   TextBulletList20Regular,
 } from '@fluentui/react-icons';
 import { connectorSkeleton, resources, translation, vocabulary } from './data';
+import { grammarGroups, grammarTopics } from './grammar';
+import { tableBookForResource } from './tablebooks';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
 
-const resourceIcon: Record<ResourceType, JSX.Element> = {
+const resourceIcon: Record<ResourceType, ReactNode> = {
   translation: <Language20Regular />,
   vocabulary: <AppsList20Regular />,
   cheatsheet: <TextBulletList20Regular />,
   grammar: <BookOpen20Regular />,
+  tablebook: <Grid20Regular />,
   phrases: <Flash20Regular />,
   course: <Library20Regular />,
   note: <Document20Regular />,
@@ -107,8 +110,9 @@ function LibrarySidebar({
   const sections: { type: ResourceType; label: string }[] = [
     { type: 'translation', label: 'Translations' },
     { type: 'vocabulary', label: 'Vocabulary' },
-    { type: 'cheatsheet', label: 'Cheat sheets' },
     { type: 'grammar', label: 'Grammar' },
+    { type: 'tablebook', label: 'Reference tables' },
+    { type: 'cheatsheet', label: 'Cheat sheets' },
     { type: 'phrases', label: 'Phrase packs' },
     { type: 'course', label: 'Courses' },
   ];
@@ -431,6 +435,157 @@ function CheatSheetDocument() {
   );
 }
 
+function GrammarDocument({ resource }: { resource: Resource }) {
+  const initialGroup = resource.id === 'grammar-subordinate' ? 'Sentence structure' : 'All';
+  const [group, setGroup] = useState<string>(initialGroup);
+  const [level, setLevel] = useState<'All' | CefrLevel>('All');
+
+  const topics = grammarTopics.filter((topic) =>
+    (group === 'All' || topic.group === group)
+    && (level === 'All' || topic.level === level),
+  );
+
+  return (
+    <article className="document grammar-document">
+      <header className="document-heading compact">
+        <div>
+          <span className="eyebrow">GRAMMAR KNOWLEDGE BASE</span>
+          <h1>{resource.id === 'grammar-hub' ? 'Grammar' : resource.title}</h1>
+          <p>Rules, patterns and examples are first-class knowledge resources. Grammar is separate from vocabulary tagged as grammatical terminology.</p>
+        </div>
+        <Badge appearance="tint">{topics.length} topics</Badge>
+      </header>
+
+      <div className="grammar-toolbar">
+        <label>Level
+          <Select value={level} onChange={(event) => setLevel(event.currentTarget.value as 'All' | CefrLevel)}>
+            {['All', 'A2', 'B1', 'B2'].map((value) => <option key={value}>{value}</option>)}
+          </Select>
+        </label>
+        <Button appearance="primary" icon={<Flash20Regular />}>Build grammar cheat sheet</Button>
+      </div>
+
+      <div className="grammar-layout">
+        <nav className="grammar-groups" aria-label="Grammar categories">
+          <button className={group === 'All' ? 'active' : ''} onClick={() => setGroup('All')}>
+            <span>All grammar</span><small>{grammarTopics.length}</small>
+          </button>
+          {grammarGroups.map((name) => (
+            <button className={group === name ? 'active' : ''} key={name} onClick={() => setGroup(name)}>
+              <span>{name}</span>
+              <small>{grammarTopics.filter((topic) => topic.group === name).length}</small>
+            </button>
+          ))}
+        </nav>
+
+        <div className="grammar-topic-list">
+          {topics.map((topic) => (
+            <section className="grammar-topic-card" key={topic.id}>
+              <div className="grammar-topic-heading">
+                <div>
+                  <span>{topic.group}</span>
+                  <h2>{topic.title}</h2>
+                </div>
+                <Badge appearance="outline">{topic.level}</Badge>
+              </div>
+              <p>{topic.summary}</p>
+              <div className="pattern-list">
+                {topic.patterns.map((pattern) => <code key={pattern}>{pattern}</code>)}
+              </div>
+              {topic.examples.length ? (
+                <div className="grammar-example">
+                  <span>EXAMPLE</span>
+                  <strong lang="nb">{topic.examples[0]}</strong>
+                </div>
+              ) : null}
+              <div className="grammar-card-actions">
+                <Button appearance="subtle" size="small">Open topic</Button>
+                <Button appearance="subtle" size="small">More examples</Button>
+                {topic.relatedTableBook ? <Button appearance="subtle" size="small">Reference table</Button> : null}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TableBookDocument({ resource }: { resource: Resource }) {
+  const book = tableBookForResource(resource.id);
+  const [tabId, setTabId] = useState(book?.tabs[0]?.id ?? '');
+  const [query, setQuery] = useState('');
+
+  if (!book) return <GenericDocument resource={resource} />;
+
+  const tab = book.tabs.find((candidate) => candidate.id === tabId) ?? book.tabs[0];
+  const rows = tab.rows.filter((row) => !query || normalize(row.cells.join(' ')).includes(normalize(query)));
+
+  return (
+    <article className="document tablebook-document">
+      <header className="document-heading compact">
+        <div>
+          <span className="eyebrow">NATIVE TABLE BOOK · {book.level}</span>
+          <h1>{book.title}</h1>
+          <p>{book.description}</p>
+        </div>
+        <div className="heading-badges">
+          <Badge appearance="tint">{book.tabs.length} tabs</Badge>
+          <Badge appearance="outline">{book.source}</Badge>
+        </div>
+      </header>
+
+      <div className="tablebook-tabs" role="tablist" aria-label={book.title}>
+        {book.tabs.map((candidate) => (
+          <button
+            role="tab"
+            aria-selected={candidate.id === tab.id}
+            className={candidate.id === tab.id ? 'active' : ''}
+            key={candidate.id}
+            onClick={() => {
+              setTabId(candidate.id);
+              setQuery('');
+            }}
+          >
+            {candidate.title}
+          </button>
+        ))}
+      </div>
+
+      <div className="tablebook-toolbar">
+        <Input
+          contentBefore={<Search20Regular />}
+          value={query}
+          onChange={(_, data) => setQuery(data.value)}
+          placeholder={`Search ${tab.title}…`}
+        />
+        <Badge appearance="outline">{rows.length} rows</Badge>
+        <Button appearance="subtle">Filter</Button>
+        <Button appearance="subtle">Convert selection</Button>
+      </div>
+
+      <div className="tablebook-scroll">
+        <table className="tablebook-table">
+          <thead>
+            <tr>{tab.columns.map((column) => <th key={column}>{column}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => row.kind === 'section' ? (
+              <tr className="tablebook-section" key={`${tab.id}-${index}`}>
+                <td colSpan={tab.columns.length}>{row.cells.find(Boolean)}</td>
+              </tr>
+            ) : (
+              <tr key={`${tab.id}-${index}`}>
+                {tab.columns.map((_, columnIndex) => <td key={columnIndex}>{row.cells[columnIndex] || '—'}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  );
+}
+
 function GenericDocument({ resource }: { resource: Resource }) {
   return (
     <article className="document generic-document">
@@ -456,6 +611,8 @@ function ResourceDocument({ resource }: { resource: Resource }) {
   if (resource.type === 'translation') return <TranslationDocument />;
   if (resource.type === 'vocabulary') return <VocabularyDocument />;
   if (resource.type === 'cheatsheet') return <CheatSheetDocument />;
+  if (resource.type === 'grammar') return <GrammarDocument resource={resource} />;
+  if (resource.type === 'tablebook') return <TableBookDocument resource={resource} />;
   return <GenericDocument resource={resource} />;
 }
 
@@ -466,7 +623,11 @@ function Inspector({ resource }: { resource: Resource }) {
       ? ['Add example', 'Classify', 'Find related', 'Change level', 'Add to cheat sheet']
       : resource.type === 'cheatsheet'
         ? ['Fill missing slots', 'Generate examples', 'Improve to B2', 'Check overlap', 'Find related vocabulary']
-        : ['Explain', 'Generate examples', 'Find related resources'];
+        : resource.type === 'grammar'
+          ? ['Explain rule', 'Generate examples', 'Compare patterns', 'Build cheat sheet', 'Find related vocabulary']
+          : resource.type === 'tablebook'
+            ? ['Search table', 'Convert row to vocabulary', 'Send row to grammar', 'Create cheat sheet', 'View import source']
+            : ['Explain', 'Generate examples', 'Find related resources'];
 
   return (
     <aside className="inspector">

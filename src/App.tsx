@@ -71,8 +71,10 @@ function TopBar({
   onOpen: (resource: Resource) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [launcherOpen, setLauncherOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const matches = useMemo(() => searchResources(resources, query).slice(0, 6), [query]);
+  const showResults = launcherOpen && Boolean(query.trim());
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -80,6 +82,7 @@ function TopBar({
         event.preventDefault();
         inputRef.current?.focus();
         inputRef.current?.select();
+        setLauncherOpen(true);
       }
     };
 
@@ -90,6 +93,7 @@ function TopBar({
   const openMatch = (resource: Resource) => {
     onOpen(resource);
     setQuery('');
+    setLauncherOpen(false);
     inputRef.current?.blur();
   };
 
@@ -109,16 +113,20 @@ function TopBar({
           <input
             ref={inputRef}
             aria-label="Open a resource"
-            aria-controls={query.trim() ? 'resource-launcher-results' : undefined}
-            aria-expanded={Boolean(query.trim())}
             value={query}
-            onChange={(event) => setQuery(event.currentTarget.value)}
+            onFocus={() => setLauncherOpen(true)}
+            onBlur={() => setLauncherOpen(false)}
+            onChange={(event) => {
+              setQuery(event.currentTarget.value);
+              setLauncherOpen(true);
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && matches[0]) {
                 event.preventDefault();
                 openMatch(matches[0]);
               } else if (event.key === 'Escape') {
                 setQuery('');
+                setLauncherOpen(false);
                 inputRef.current?.blur();
               }
             }}
@@ -127,13 +135,11 @@ function TopBar({
           <kbd>Ctrl/⌘ K</kbd>
         </div>
 
-        {query.trim() ? (
-          <div className="quick-results" id="resource-launcher-results" role="listbox">
+        {showResults ? (
+          <div className="quick-results" aria-label="Resource search results">
             {matches.length ? matches.map((resource) => (
               <button
                 type="button"
-                role="option"
-                aria-selected="false"
                 className="quick-result"
                 key={resource.id}
                 onMouseDown={(event) => event.preventDefault()}

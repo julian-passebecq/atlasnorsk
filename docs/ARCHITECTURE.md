@@ -44,6 +44,7 @@ Resource types:
 - vocabulary
 - cheatsheet
 - grammar
+- table book
 - phrase collection
 - course note
 - generic note
@@ -75,3 +76,39 @@ The inspector exposes these commands in context. A generic chat transcript is no
 4. Import the 215 legacy professional-vocabulary records into the new vocabulary schema.
 5. AI provider abstraction and structured JSON responses.
 6. Export/import and QA.
+
+
+## Table Books instead of Excel runtime
+
+AtlasNorsk does not embed Excel. XLSX/XLSM is an import format only.
+
+A Table Book preserves the useful spreadsheet affordances:
+- multiple named tabs;
+- dense rows;
+- search/filter;
+- row-to-vocabulary and row-to-grammar actions.
+
+It intentionally drops:
+- macros;
+- formulas as behavior;
+- workbook navigation sheets;
+- styling as semantic data;
+- duplicated A-Z aggregate sheets when the app can synthesize that view.
+
+The current canonical conversion strategy is documented in `docs/CONTENT_IMPORT_AUDIT.md`.
+
+## Grammar as first-class knowledge
+
+Grammar is not a vocabulary tag. It has its own topic hierarchy:
+- sentence structure;
+- verbs;
+- nouns;
+- adjectives;
+- adverbs;
+- pronouns;
+- prepositions;
+- connectors;
+- word formation;
+- irregularities.
+
+Grammar topics can reference vocabulary entities or Table Book rows without copying the underlying material.

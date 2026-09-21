@@ -260,13 +260,36 @@ function articleMatchesManifest(article: NewsArticle, item: ContentManifestItem)
     && article.themes.every((theme, index) => theme === item.themes[index]);
 }
 
+function assertArticleMatchesManifest(
+  article: NewsArticle,
+  expected?: ContentManifestItem,
+): void {
+  if (expected && !articleMatchesManifest(article, expected)) {
+    throw new Error('News article metadata does not match manifest');
+  }
+}
+
 export async function loadNewsArticle(
   path: string,
   expected?: ContentManifestItem,
 ): Promise<NewsArticle> {
-  const article = await loadValidated(path, assertNewsArticle);
-  if (expected && !articleMatchesManifest(article, expected)) {
-    throw new Error('News article metadata does not match manifest');
+  try {
+    const remote = await fetchJson(path);
+    assertNewsArticle(remote);
+    assertArticleMatchesManifest(remote, expected);
+    writeCache(path, remote);
+    return remote;
+  } catch (remoteError) {
+    const cached = readCache<unknown>(path);
+    if (cached !== null) {
+      try {
+        assertNewsArticle(cached);
+        assertArticleMatchesManifest(cached, expected);
+        return cached;
+      } catch {
+        // Invalid or stale cached content must not hide the original live-content error.
+      }
+    }
+    throw remoteError;
   }
-  return article;
 }

@@ -66,7 +66,20 @@ describe('GitHub content provider', () => {
       vi.fn().mockResolvedValue(new Response(JSON.stringify(article), { status: 200 })),
     );
 
-    await expect(loadNewsArticle(manifest.items[0].path)).resolves.toEqual(article);
+    await expect(loadNewsArticle(manifest.items[0].path, manifest.items[0])).resolves.toEqual(article);
+  });
+
+  it('rejects an article whose metadata does not match its manifest entry', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ...article, title: 'Different title' }), { status: 200 }),
+      ),
+    );
+
+    await expect(
+      loadNewsArticle(manifest.items[0].path, manifest.items[0]),
+    ).rejects.toThrow('News article metadata does not match manifest');
   });
 
   it('rejects unsupported manifest versions', async () => {

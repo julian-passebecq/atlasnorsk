@@ -31,6 +31,7 @@ import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
 import { canSplitWorkspace, nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, secondaryResourceForTabs, workspaceNames } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
+import { subcategoriesForCategory } from './vocabularyState';
 
 const workspaces = workspaceNames(resources);
 
@@ -402,7 +403,7 @@ function VocabularyDocument() {
   const [selectedId, setSelectedId] = useState(vocabulary[0]?.id ?? '');
 
   const categories = ['All', ...new Set(vocabulary.map((entry) => entry.category))];
-  const subcategories = ['All', ...new Set(vocabulary.map((entry) => entry.subcategory))];
+  const subcategories = ['All', ...subcategoriesForCategory(vocabulary, filters.category)];
   const types = ['All', ...new Set(vocabulary.map((entry) => entry.type))] as const;
   const rows = vocabulary.filter((entry) => {
     const query = normalize(filters.query);
@@ -439,7 +440,14 @@ function VocabularyDocument() {
           </Select>
         </label>
         <label>Category
-          <Select value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.currentTarget.value })}>
+          <Select
+            value={filters.category}
+            onChange={(event) => setFilters({
+              ...filters,
+              category: event.currentTarget.value,
+              subcategory: 'All',
+            })}
+          >
             {categories.map((value) => <option key={value}>{value}</option>)}
           </Select>
         </label>

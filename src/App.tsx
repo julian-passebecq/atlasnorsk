@@ -145,19 +145,19 @@ function LibrarySidebar({
       </div>
 
       <nav className="library-scroll" aria-label="Norwegian resources">
-        <button className="nav-home">
+        <div className="nav-home" aria-label="Workspace resource count">
           <Grid20Regular />
-          <span>Today</span>
+          <span>Workspace resources</span>
           <span className="nav-count">{workspaceResources.length}</span>
-        </button>
+        </div>
 
         {sections.map(({ type, label }) => (
           <section className="tree-section" key={type}>
-            <button className="tree-heading">
+            <div className="tree-heading">
               <ChevronDown16Regular />
               <span>{label}</span>
               <span>{grouped.get(type)?.length ?? 0}</span>
-            </button>
+            </div>
             {(grouped.get(type) ?? []).map((resource) => (
               <button className="tree-resource" key={resource.id} onClick={() => onOpen(resource)}>
                 {resourceIcon[resource.type]}
@@ -169,9 +169,6 @@ function LibrarySidebar({
         ))}
       </nav>
 
-      <div className="library-footer">
-        <Button appearance="subtle" icon={<Add20Regular />} size="small">New resource</Button>
-      </div>
     </aside>
   );
 }

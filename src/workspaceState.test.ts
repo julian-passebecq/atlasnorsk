@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resources } from './data';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, workspaceNames } from './workspaceState';
+import { canSplitWorkspace, nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, secondaryResourceForTabs, workspaceNames } from './workspaceState';
 
 describe('workspace state', () => {
   it('scopes library resources to the selected workspace', () => {
@@ -62,5 +62,20 @@ describe('workspace state', () => {
 
   it('returns no launcher results for a blank query', () => {
     expect(searchResources(resources, '   ')).toEqual([]);
+  });
+
+  it('disables split workspace when fewer than two tabs are open', () => {
+    expect(canSplitWorkspace([resources[0]])).toBe(false);
+    expect(canSplitWorkspace([resources[0], resources[1]])).toBe(true);
+  });
+
+  it('keeps the secondary pane on an open non-active tab', () => {
+    const tabs = [resources[0], resources[1], resources[2]];
+    expect(secondaryResourceForTabs(tabs, resources[2].id, resources[0].id)?.id).toBe(resources[2].id);
+    expect(secondaryResourceForTabs(tabs, resources[0].id, resources[0].id)?.id).toBe(resources[1].id);
+  });
+
+  it('returns no secondary pane candidate when only the active tab remains', () => {
+    expect(secondaryResourceForTabs([resources[0]], resources[2].id, resources[0].id)).toBeNull();
   });
 });

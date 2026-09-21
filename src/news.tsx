@@ -1,0 +1,227 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Divider, Select, Spinner } from '@fluentui/react-components';
+import {
+  CONTENT_BASE_URL,
+  loadDailyNewsManifest,
+  loadNewsArticle,
+  type ContentManifestItem,
+  type NewsArticle,
+} from './content/githubContentProvider';
+
+type ReadingMode = 'Norsk + English' | 'Norsk + French' | 'Norsk only' | 'Learning';
+
+function articleLabel(item: ContentManifestItem) {
+  return `${item.date} · ${item.level}`;
+}
+
+export function NewsDocument() {
+  const [items, setItems] = useState<ContentManifestItem[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [article, setArticle] = useState<NewsArticle | null>(null);
+  const [mode, setMode] = useState<ReadingMode>('Norsk + English');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    loadDailyNewsManifest()
+      .then((manifest) => {
+        if (!active) return;
+        setItems(manifest.items);
+        setSelectedId((current) => current || manifest.items[0]?.id || '');
+        setStatus('ready');
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason instanceof Error ? reason.message : 'Could not load Daily News.');
+        setStatus('error');
+      });
+    return () => { active = false; };
+  }, []);
+
+  const selected = useMemo(
+    () => items.find((item) => item.id === selectedId) ?? items[0],
+    [items, selectedId],
+  );
+
+  useEffect(() => {
+    if (!selected) {
+      setArticle(null);
+      return;
+    }
+    let active = true;
+    setArticle(null);
+    loadNewsArticle(selected.path)
+      .then((value) => {
+        if (active) setArticle(value);
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason instanceof Error ? reason.message : 'Could not load article.');
+        setStatus('error');
+      });
+    return () => { active = false; };
+  }, [selected]);
+
+  return (
+    <article className="document news-document">
+      <header className="document-heading compact">
+        <div>
+          <span className="eyebrow">DAILY NEWS · LIVE CONTENT</span>
+          <h1>Daily News</h1>
+          <p>Translated learning articles load directly from atlasnorsk-content/main. Publishing JSON is enough; the app does not need a redeploy.</p>
+        </div>
+        <div className="heading-badges">
+          <Badge appearance="tint">GitHub content</Badge>
+          <Badge appearance="outline">{items.length} articles</Badge>
+        </div>
+      </header>
+
+      {status === 'loading' ? (
+        <div className="news-status"><Spinner size="tiny" /><span>Loading content manifest…</span></div>
+      ) : null}
+
+      {status === 'error' ? (
+        <div className="news-error">
+          <strong>Daily News could not load.</strong>
+          <span>{error}</span>
+          <a href={CONTENT_BASE_URL} target="_blank" rel="noreferrer">Open content source</a>
+        </div>
+      ) : null}
+
+      {status === 'ready' && items.length === 0 ? (
+        <div className="news-empty">
+          <strong>No published articles yet.</strong>
+          <p>Add a JSON article to atlasnorsk-content and update the Daily News manifest.</p>
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="news-layout">
+          <aside className="news-list">
+            <div className="news-list-title">ARTICLES</div>
+            {items.map((item) => (
+              <button
+                key={item.id}
+                className={item.id === selected?.id ? 'news-list-item active' : 'news-list-item'}
+                onClick={() => {
+                  setStatus('ready');
+                  setSelectedId(item.id);
+                }}
+              >
+                <span>{articleLabel(item)}</span>
+                <strong>{item.title}</strong>
+                <small>{item.themes.join(' · ')}</small>
+              </button>
+            ))}
+          </aside>
+
+          <section className="news-reader">
+            {!article ? (
+              <div className="news-status"><Spinner size="tiny" /><span>Loading article…</span></div>
+            ) : (
+              <>
+                <div className="news-reader-heading">
+                  <div>
+                    <span className="eyebrow">{article.date} · {article.source.publisher}</span>
+                    <h2>{article.title}</h2>
+                    <div className="news-tags">
+                      <Badge appearance="tint">{article.level}</Badge>
+                      {article.themes.map((theme) => <Badge appearance="outline" key={theme}>{theme}</Badge>)}
+                    </div>
+                  </div>
+                  <Select value={mode} onChange={(event) => setMode(event.currentTarget.value as ReadingMode)}>
+                    <option>Norsk + English</option>
+                    <option>Norsk + French</option>
+                    <option>Norsk only</option>
+                    <option>Learning</option>
+                  </Select>
+                </div>
+
+                {article.summary?.norsk ? (
+                  <div className="news-summary">
+                    <span>SUMMARY</span>
+                    <p lang="nb">{article.summary.norsk}</p>
+                  </div>
+                ) : null}
+
+                <div className="news-sections">
+                  {article.sections.map((section, index) => (
+                    <section className="news-section" key={section.id}>
+                      <div className="news-section-number">{String(index + 1).padStart(2, '0')}</div>
+                      <div className="news-section-content">
+                        <p className="news-norsk" lang="nb">{section.norsk}</p>
+                        {mode === 'Norsk + English' && section.english ? <p className="news-translation">{section.english}</p> : null}
+                        {mode === 'Norsk + French' && section.french ? <p className="news-translation">{section.french}</p> : null}
+                        {mode === 'Learning' ? (
+                          <>
+                            {section.english ? <p className="news-translation">{section.english}</p> : null}
+                            {section.french ? <p className="news-translation">{section.french}</p> : null}
+                            {section.note ? <p className="news-note">{section.note}</p> : null}
+                          </>
+                        ) : null}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+
+                <Divider />
+
+                <section className="news-learning-grid">
+                  <div>
+                    <div className="section-heading"><h3>Vocabulary</h3></div>
+                    <div className="news-chip-list">
+                      {article.vocabulary.map((entry) => (
+                        <article className="news-learning-card" key={`${entry.term}-${entry.english}`}>
+                          <div><strong lang="nb">{entry.marker ? `${entry.marker} ` : ''}{entry.term}</strong><Badge appearance="outline">{entry.level}</Badge></div>
+                          <span>{entry.type}</span>
+                          <p>{entry.english} · {entry.french}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="section-heading"><h3>Grammar</h3></div>
+                    <div className="news-chip-list">
+                      {article.grammar.map((entry) => (
+                        <article className="news-learning-card" key={`${entry.topic}-${entry.example}`}>
+                          <strong>{entry.topic}</strong>
+                          <p lang="nb">{entry.example}</p>
+                          {entry.explanation ? <small>{entry.explanation}</small> : null}
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="document-section">
+                  <div className="section-heading"><h3>Useful phrases</h3></div>
+                  <div className="inline-vocab-grid">
+                    {article.usefulPhrases.map((phrase) => (
+                      <article className="mini-vocab" key={phrase.norsk}>
+                        <strong lang="nb">{phrase.norsk}</strong>
+                        <p>{phrase.english}</p>
+                        <p>{phrase.french}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="news-source-bar">
+                  <span>Source: {article.source.publisher}</span>
+                  <Button
+                    appearance="subtle"
+                    onClick={() => window.open(article.source.url, '_blank', 'noopener,noreferrer')}
+                  >
+                    Open source
+                  </Button>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </article>
+  );
+}

@@ -25,6 +25,12 @@ describe('AtlasNorsk seed model', () => {
     )).toBe(true);
   });
 
+  it('keeps startup resources addressable by stable ids', () => {
+    expect(resources.find((resource) => resource.id === 'translation-daily')?.type).toBe('translation');
+    expect(resources.find((resource) => resource.id === 'news-daily')?.type).toBe('news');
+    expect(resources.find((resource) => resource.id === 'vocab-transport')?.type).toBe('vocabulary');
+  });
+
   it('keeps stable unique vocabulary ids', () => {
     expect(new Set(vocabulary.map((entry) => entry.id)).size).toBe(vocabulary.length);
   });

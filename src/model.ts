@@ -1,5 +1,6 @@
 export type ResourceType =
   | 'translation'
+  | 'news'
   | 'vocabulary'
   | 'cheatsheet'
   | 'grammar'

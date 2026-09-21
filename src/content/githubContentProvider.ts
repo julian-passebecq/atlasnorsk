@@ -33,7 +33,7 @@ export interface NewsArticle {
     publishedAt?: string | null;
     language: string;
   };
-  rights?: {
+  rights: {
     storageMode: 'link-only' | 'user-provided' | 'licensed' | 'public-domain';
     note?: string;
   };
@@ -179,6 +179,8 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
     || !isCefrLevel(article.level)
     || !isStringArray(article.themes)
     || !article.source
+    || !article.rights
+    || !['link-only', 'user-provided', 'licensed', 'public-domain'].includes(article.rights.storageMode)
     || !isNonEmptyString(article.source.title)
     || !isNonEmptyString(article.source.publisher)
     || !isNonEmptyString(article.source.url)
@@ -193,6 +195,13 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
   }
   if (!article.sections.every((section) => section && isNonEmptyString(section.id) && isNonEmptyString(section.norsk))) {
     throw new Error('Invalid news article section');
+  }
+
+  if (
+    article.rights.storageMode === 'link-only'
+    && article.sections.some((section) => isNonEmptyString(section.sourceText))
+  ) {
+    throw new Error('Link-only news article must not store source text');
   }
 
   if (!article.vocabulary.every((entry) =>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resources } from './data';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, workspaceNames } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, workspaceNames } from './workspaceState';
 
 describe('workspace state', () => {
   it('scopes library resources to the selected workspace', () => {
@@ -49,5 +49,18 @@ describe('workspace state', () => {
       'Work Norwegian',
       'Her på berget',
     ]);
+  });
+
+  it('searches resources across title, type and workspace', () => {
+    expect(searchResources(resources, 'grammar')[0]?.id).toBe('grammar-hub');
+    expect(searchResources(resources, 'work norwegian')[0]?.id).toBe('phrases-work');
+  });
+
+  it('folds Norwegian accents for resource search', () => {
+    expect(searchResources(resources, 'her pa berget')[0]?.id).toBe('course-hpb-07');
+  });
+
+  it('returns no launcher results for a blank query', () => {
+    expect(searchResources(resources, '   ')).toEqual([]);
   });
 });

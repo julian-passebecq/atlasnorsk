@@ -18,7 +18,6 @@ import {
   Filter20Regular,
   Flash20Regular,
   Grid20Regular,
-  Language20Regular,
   Library20Regular,
   PanelRight20Regular,
   Search20Regular,
@@ -35,7 +34,7 @@ import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType
 const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
 
 const resourceIcon: Record<ResourceType, ReactNode> = {
-  translation: <Language20Regular />,
+  translation: <Document20Regular />,
   news: <Document20Regular />,
   vocabulary: <AppsList20Regular />,
   cheatsheet: <TextBulletList20Regular />,
@@ -238,7 +237,7 @@ function TranslationDocument() {
       </header>
 
       <div className="action-bar">
-        <Button appearance="primary" icon={<Language20Regular />}>Translate</Button>
+        <Button appearance="primary" icon={<Document20Regular />}>Translate</Button>
         <Button appearance="subtle" icon={<Edit20Regular />}>Correct</Button>
         <Button appearance="subtle">Natural</Button>
         <Button appearance="subtle">Simpler</Button>

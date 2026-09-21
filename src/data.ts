@@ -4,8 +4,13 @@ export const resources: Resource[] = [
   { id: 'translation-daily', title: 'Daily translation', type: 'translation', workspace: 'Daily Norwegian', level: 'B1', category: 'Daily life', updatedAt: 'Today' },
   { id: 'vocab-transport', title: 'Transport vocabulary', type: 'vocabulary', workspace: 'Daily Norwegian', level: 'B1', category: 'Transport', updatedAt: 'Today' },
   { id: 'cheat-connectors', title: 'B2 connectors', type: 'cheatsheet', workspace: 'B2 Preparation', level: 'B2', category: 'Grammar', updatedAt: 'Today' },
-  { id: 'grammar-subordinate', title: 'Subordinate clauses', type: 'grammar', workspace: 'B2 Preparation', level: 'B2', category: 'Grammar', updatedAt: 'Yesterday' },
+  { id: 'grammar-hub', title: 'Grammar', type: 'grammar', workspace: 'B2 Preparation', category: 'Grammar', updatedAt: 'Today' },
+  { id: 'grammar-subordinate', title: 'Subordinate clauses', type: 'grammar', workspace: 'B2 Preparation', level: 'B1', category: 'Sentence structure', updatedAt: 'Yesterday' },
+  { id: 'tablebook-a2b1-core', title: 'A2–B1 Core Vocabulary', type: 'tablebook', workspace: 'Daily Norwegian', category: 'Reference tables', updatedAt: 'Today' },
+  { id: 'tablebook-b2-toolbox', title: 'B2 Toolbox', type: 'tablebook', workspace: 'B2 Preparation', level: 'B2', category: 'Reference tables', updatedAt: 'Today' },
+  { id: 'tablebook-grammar-patterns', title: 'Grammar & Word Formation', type: 'tablebook', workspace: 'B2 Preparation', level: 'B2', category: 'Grammar', updatedAt: 'Today' },
   { id: 'phrases-work', title: 'Work phrases', type: 'phrases', workspace: 'Work Norwegian', level: 'B1', category: 'Work', updatedAt: 'Yesterday' },
+  { id: 'phrases-b2-oral', title: 'B2 Oral & Listening', type: 'phrases', workspace: 'B2 Preparation', level: 'B2', category: 'Oral', updatedAt: 'Today' },
   { id: 'course-hpb-07', title: 'Her på berget · Chapter 7', type: 'course', workspace: 'Her på berget', level: 'B2', category: 'Course', updatedAt: '3d' },
 ];
 

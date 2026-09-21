@@ -251,6 +251,22 @@ export async function loadDailyNewsManifest(): Promise<ContentManifest> {
   return loadValidated('content/daily-news/manifest.json', assertManifest);
 }
 
-export async function loadNewsArticle(path: string): Promise<NewsArticle> {
-  return loadValidated(path, assertNewsArticle);
+function articleMatchesManifest(article: NewsArticle, item: ContentManifestItem): boolean {
+  return article.id === item.id
+    && article.title === item.title
+    && article.date === item.date
+    && article.level === item.level
+    && article.themes.length === item.themes.length
+    && article.themes.every((theme, index) => theme === item.themes[index]);
+}
+
+export async function loadNewsArticle(
+  path: string,
+  expected?: ContentManifestItem,
+): Promise<NewsArticle> {
+  const article = await loadValidated(path, assertNewsArticle);
+  if (expected && !articleMatchesManifest(article, expected)) {
+    throw new Error('News article metadata does not match manifest');
+  }
+  return article;
 }

@@ -29,6 +29,7 @@ import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
+import { nextActiveResourceAfterClose, resourcesForWorkspace } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
@@ -100,7 +101,7 @@ function LibrarySidebar({
   onOpen: (resource: Resource) => void;
 }) {
   const workspaceResources = useMemo(
-    () => resources.filter((resource) => resource.workspace === activeWorkspace),
+    () => resourcesForWorkspace(resources, activeWorkspace),
     [activeWorkspace],
   );
 
@@ -192,27 +193,31 @@ function TabStrip({
 }) {
   return (
     <div className="tab-strip">
-      <div className="tabs">
+      <div className="tabs" role="tablist" aria-label="Open documents">
         {tabs.map((tab) => (
-          <button
+          <div
             key={tab.id}
-            className={tab.id === activeId ? 'document-tab active' : 'document-tab'}
-            onClick={() => setActive(tab.id)}
+            className={tab.id === activeId ? 'document-tab-shell active' : 'document-tab-shell'}
           >
-            {resourceIcon[tab.type]}
-            <span>{tab.title}</span>
-            <span
-              role="button"
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab.id === activeId}
+              className="document-tab"
+              onClick={() => setActive(tab.id)}
+            >
+              {resourceIcon[tab.type]}
+              <span>{tab.title}</span>
+            </button>
+            <button
+              type="button"
               aria-label={`Close ${tab.title}`}
               className="tab-close"
-              onClick={(event) => {
-                event.stopPropagation();
-                closeTab(tab.id);
-              }}
+              onClick={() => closeTab(tab.id)}
             >
               <Dismiss16Regular />
-            </span>
-          </button>
+            </button>
+          </div>
         ))}
         <button className="add-tab" aria-label="New document tab"><Add20Regular /></button>
       </div>
@@ -772,6 +777,13 @@ export function App() {
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? resources[0];
   const secondary = tabs.find((tab) => tab.id === secondaryId) ?? resources[2];
 
+  const activateTab = (id: string) => {
+    const tab = tabs.find((candidate) => candidate.id === id);
+    if (!tab) return;
+    setActiveId(tab.id);
+    setActiveWorkspace(tab.workspace);
+  };
+
   const openResource = (resource: Resource) => {
     setTabs((current) => current.some((tab) => tab.id === resource.id) ? current : [...current, resource]);
     setActiveId(resource.id);
@@ -779,12 +791,22 @@ export function App() {
   };
 
   const closeTab = (id: string) => {
-    setTabs((current) => {
-      if (current.length === 1) return current;
-      const next = current.filter((tab) => tab.id !== id);
-      if (id === activeId) setActiveId(next[0].id);
-      return next;
-    });
+    if (tabs.length === 1) return;
+
+    const nextActive = nextActiveResourceAfterClose(tabs, id, activeId);
+    const nextTabs = tabs.filter((tab) => tab.id !== id);
+
+    setTabs(nextTabs);
+
+    if (nextActive) {
+      setActiveId(nextActive.id);
+      setActiveWorkspace(nextActive.workspace);
+    }
+
+    if (id === secondaryId) {
+      const replacement = nextTabs.find((tab) => tab.id !== nextActive?.id) ?? nextTabs[0];
+      if (replacement) setSecondaryId(replacement.id);
+    }
   };
 
   return (
@@ -802,7 +824,7 @@ export function App() {
             <TabStrip
               tabs={tabs}
               activeId={active.id}
-              setActive={setActiveId}
+              setActive={activateTab}
               closeTab={closeTab}
               split={split}
               toggleSplit={() => setSplit((value) => !value)}

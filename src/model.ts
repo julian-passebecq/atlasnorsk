@@ -3,6 +3,7 @@ export type ResourceType =
   | 'vocabulary'
   | 'cheatsheet'
   | 'grammar'
+  | 'tablebook'
   | 'phrases'
   | 'course'
   | 'note';

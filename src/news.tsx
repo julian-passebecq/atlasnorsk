@@ -19,25 +19,32 @@ export function NewsDocument() {
   const [selectedId, setSelectedId] = useState('');
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [mode, setMode] = useState<ReadingMode>('Norsk + English');
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [error, setError] = useState('');
+  const [manifestStatus, setManifestStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [manifestError, setManifestError] = useState('');
+  const [articleStatus, setArticleStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [articleError, setArticleError] = useState('');
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [articleRefreshNonce, setArticleRefreshNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
-    setStatus('loading');
-    setError('');
+    setManifestStatus('loading');
+    setManifestError('');
     loadDailyNewsManifest()
       .then((manifest) => {
         if (!active) return;
         setItems(manifest.items);
-        setSelectedId((current) => current || manifest.items[0]?.id || '');
-        setStatus('ready');
+        setSelectedId((current) =>
+          manifest.items.some((item) => item.id === current)
+            ? current
+            : manifest.items[0]?.id || '',
+        );
+        setManifestStatus('ready');
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setError(reason instanceof Error ? reason.message : 'Could not load Daily News.');
-        setStatus('error');
+        setManifestError(reason instanceof Error ? reason.message : 'Could not load Daily News.');
+        setManifestStatus('error');
       });
     return () => { active = false; };
   }, [refreshNonce]);
@@ -50,21 +57,27 @@ export function NewsDocument() {
   useEffect(() => {
     if (!selected) {
       setArticle(null);
+      setArticleStatus('idle');
+      setArticleError('');
       return;
     }
     let active = true;
     setArticle(null);
+    setArticleStatus('loading');
+    setArticleError('');
     loadNewsArticle(selected.path)
       .then((value) => {
-        if (active) setArticle(value);
+        if (!active) return;
+        setArticle(value);
+        setArticleStatus('ready');
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setError(reason instanceof Error ? reason.message : 'Could not load article.');
-        setStatus('error');
+        setArticleError(reason instanceof Error ? reason.message : 'Could not load article.');
+        setArticleStatus('error');
       });
     return () => { active = false; };
-  }, [selected]);
+  }, [selected, articleRefreshNonce]);
 
   return (
     <article className="document news-document">
@@ -83,14 +96,14 @@ export function NewsDocument() {
         </div>
       </header>
 
-      {status === 'loading' ? (
+      {manifestStatus === 'loading' ? (
         <div className="news-status"><Spinner size="tiny" /><span>Loading content manifest…</span></div>
       ) : null}
 
-      {status === 'error' ? (
+      {manifestStatus === 'error' ? (
         <div className="news-error">
           <strong>Daily News could not load.</strong>
-          <span>{error}</span>
+          <span>{manifestError}</span>
           <div className="news-error-actions">
             <Button appearance="primary" size="small" onClick={() => setRefreshNonce((value) => value + 1)}>
               Try again
@@ -100,7 +113,7 @@ export function NewsDocument() {
         </div>
       ) : null}
 
-      {status === 'ready' && items.length === 0 ? (
+      {manifestStatus === 'ready' && items.length === 0 ? (
         <div className="news-empty">
           <strong>No published articles yet.</strong>
           <p>Add a JSON article to atlasnorsk-content and update the Daily News manifest.</p>
@@ -115,10 +128,7 @@ export function NewsDocument() {
               <button
                 key={item.id}
                 className={item.id === selected?.id ? 'news-list-item active' : 'news-list-item'}
-                onClick={() => {
-                  setStatus('ready');
-                  setSelectedId(item.id);
-                }}
+                onClick={() => setSelectedId(item.id)}
               >
                 <span>{articleLabel(item)}</span>
                 <strong>{item.title}</strong>
@@ -128,9 +138,23 @@ export function NewsDocument() {
           </aside>
 
           <section className="news-reader">
-            {!article ? (
+            {articleStatus === 'loading' ? (
               <div className="news-status"><Spinner size="tiny" /><span>Loading article…</span></div>
-            ) : (
+            ) : null}
+
+            {articleStatus === 'error' ? (
+              <div className="news-error news-article-error">
+                <strong>This article could not load.</strong>
+                <span>{articleError}</span>
+                <div className="news-error-actions">
+                  <Button appearance="primary" size="small" onClick={() => setArticleRefreshNonce((value) => value + 1)}>
+                    Retry article
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {articleStatus === 'ready' && article ? (
               <>
                 <div className="news-reader-heading">
                   <div>

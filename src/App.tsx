@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Badge,
   Button,
@@ -29,7 +29,7 @@ import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, workspaceNames } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, searchResources, workspaceNames } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
 const workspaces = workspaceNames(resources);
@@ -70,6 +70,29 @@ function TopBar({
 }: {
   onOpen: (resource: Resource) => void;
 }) {
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const matches = useMemo(() => searchResources(resources, query).slice(0, 6), [query]);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, []);
+
+  const openMatch = (resource: Resource) => {
+    onOpen(resource);
+    setQuery('');
+    inputRef.current?.blur();
+  };
+
   return (
     <header className="topbar">
       <div className="brand">
@@ -79,11 +102,56 @@ function TopBar({
           <small>Bokmål learning workspace</small>
         </span>
       </div>
-      <div className="quick-input">
-        <Search20Regular />
-        <input aria-label="Quick translate or search" placeholder="Translate, correct or search Norwegian..." />
-        <kbd>⌘ K</kbd>
+
+      <div className="quick-input-wrap">
+        <div className="quick-input">
+          <Search20Regular />
+          <input
+            ref={inputRef}
+            aria-label="Open a resource"
+            aria-controls={query.trim() ? 'resource-launcher-results' : undefined}
+            aria-expanded={Boolean(query.trim())}
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && matches[0]) {
+                event.preventDefault();
+                openMatch(matches[0]);
+              } else if (event.key === 'Escape') {
+                setQuery('');
+                inputRef.current?.blur();
+              }
+            }}
+            placeholder="Open a resource..."
+          />
+          <kbd>Ctrl/⌘ K</kbd>
+        </div>
+
+        {query.trim() ? (
+          <div className="quick-results" id="resource-launcher-results" role="listbox">
+            {matches.length ? matches.map((resource) => (
+              <button
+                type="button"
+                role="option"
+                aria-selected="false"
+                className="quick-result"
+                key={resource.id}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => openMatch(resource)}
+              >
+                <span className="quick-result-icon">{resourceIcon[resource.type]}</span>
+                <span className="quick-result-copy">
+                  <strong>{resource.title}</strong>
+                  <small>{resource.workspace} · {resource.type}</small>
+                </span>
+              </button>
+            )) : (
+              <div className="quick-no-results">No matching resource</div>
+            )}
+          </div>
+        ) : null}
       </div>
+
       <Button appearance="primary" icon={<Document20Regular />} onClick={() => onOpen(resources[0])}>
         Translate
       </Button>

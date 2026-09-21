@@ -98,21 +98,15 @@ function writeCache(path: string, value: unknown) {
   }
 }
 
-async function fetchJson<T>(path: string): Promise<{ value: T; fromCache: boolean }> {
-  try {
-    const response = await fetch(new URL(path, CONTENT_BASE_URL), {
-      cache: 'no-cache',
-      headers: { Accept: 'application/json' },
-    });
-    if (!response.ok) {
-      throw new Error(`Content request failed: ${response.status} ${path}`);
-    }
-    return { value: await response.json() as T, fromCache: false };
-  } catch (error) {
-    const cached = readCache<T>(path);
-    if (cached !== null) return { value: cached, fromCache: true };
-    throw error;
+async function fetchJson(path: string): Promise<unknown> {
+  const response = await fetch(new URL(path, CONTENT_BASE_URL), {
+    cache: 'no-cache',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Content request failed: ${response.status} ${path}`);
   }
+  return response.json() as Promise<unknown>;
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -192,17 +186,33 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
   }
 }
 
+async function loadValidated<T>(
+  path: string,
+  validate: (value: unknown) => asserts value is T,
+): Promise<T> {
+  try {
+    const remote = await fetchJson(path);
+    validate(remote);
+    writeCache(path, remote);
+    return remote;
+  } catch (remoteError) {
+    const cached = readCache<unknown>(path);
+    if (cached !== null) {
+      try {
+        validate(cached);
+        return cached;
+      } catch {
+        // Never return an invalid cached value. Prefer the original remote error.
+      }
+    }
+    throw remoteError;
+  }
+}
+
 export async function loadDailyNewsManifest(): Promise<ContentManifest> {
-  const path = 'content/daily-news/manifest.json';
-  const { value, fromCache } = await fetchJson<unknown>(path);
-  assertManifest(value);
-  if (!fromCache) writeCache(path, value);
-  return value;
+  return loadValidated('content/daily-news/manifest.json', assertManifest);
 }
 
 export async function loadNewsArticle(path: string): Promise<NewsArticle> {
-  const { value, fromCache } = await fetchJson<unknown>(path);
-  assertNewsArticle(value);
-  if (!fromCache) writeCache(path, value);
-  return value;
+  return loadValidated(path, assertNewsArticle);
 }

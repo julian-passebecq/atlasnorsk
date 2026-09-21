@@ -113,6 +113,14 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(isNonEmptyString);
+}
+
+function isCefrLevel(value: unknown): value is NewsArticle['level'] {
+  return value === 'A2' || value === 'B1' || value === 'B2' || value === 'C1';
+}
+
 function isSafeContentPath(value: string) {
   return value.startsWith('content/daily-news/')
     && !value.includes('..')
@@ -147,8 +155,8 @@ function assertManifest(value: unknown): asserts value is ContentManifest {
       || !isNonEmptyString(item.path)
       || !isNonEmptyString(item.title)
       || !isNonEmptyString(item.date)
-      || !isNonEmptyString(item.level)
-      || !Array.isArray(item.themes)
+      || !isCefrLevel(item.level)
+      || !isStringArray(item.themes)
       || !isSafeContentPath(item.path)
     ) {
       throw new Error('Invalid Daily News manifest item');
@@ -168,12 +176,14 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
     !isNonEmptyString(article.id)
     || !isNonEmptyString(article.title)
     || !isNonEmptyString(article.date)
-    || !isNonEmptyString(article.level)
-    || !Array.isArray(article.themes)
+    || !isCefrLevel(article.level)
+    || !isStringArray(article.themes)
     || !article.source
+    || !isNonEmptyString(article.source.title)
     || !isNonEmptyString(article.source.publisher)
     || !isNonEmptyString(article.source.url)
     || !isHttpUrl(article.source.url)
+    || !isNonEmptyString(article.source.language)
     || !Array.isArray(article.sections)
     || !Array.isArray(article.vocabulary)
     || !Array.isArray(article.grammar)
@@ -183,6 +193,34 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
   }
   if (!article.sections.every((section) => section && isNonEmptyString(section.id) && isNonEmptyString(section.norsk))) {
     throw new Error('Invalid news article section');
+  }
+
+  if (!article.vocabulary.every((entry) =>
+    entry
+    && isNonEmptyString(entry.term)
+    && isNonEmptyString(entry.type)
+    && isCefrLevel(entry.level)
+    && isNonEmptyString(entry.english)
+    && isNonEmptyString(entry.french),
+  )) {
+    throw new Error('Invalid news article vocabulary');
+  }
+
+  if (!article.grammar.every((entry) =>
+    entry
+    && isNonEmptyString(entry.topic)
+    && isNonEmptyString(entry.example),
+  )) {
+    throw new Error('Invalid news article grammar');
+  }
+
+  if (!article.usefulPhrases.every((entry) =>
+    entry
+    && isNonEmptyString(entry.norsk)
+    && isNonEmptyString(entry.english)
+    && isNonEmptyString(entry.french),
+  )) {
+    throw new Error('Invalid news article phrase');
   }
 }
 

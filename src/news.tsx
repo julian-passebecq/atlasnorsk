@@ -21,9 +21,12 @@ export function NewsDocument() {
   const [mode, setMode] = useState<ReadingMode>('Norsk + English');
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setStatus('loading');
+    setError('');
     loadDailyNewsManifest()
       .then((manifest) => {
         if (!active) return;
@@ -37,7 +40,7 @@ export function NewsDocument() {
         setStatus('error');
       });
     return () => { active = false; };
-  }, []);
+  }, [refreshNonce]);
 
   const selected = useMemo(
     () => items.find((item) => item.id === selectedId) ?? items[0],
@@ -74,6 +77,9 @@ export function NewsDocument() {
         <div className="heading-badges">
           <Badge appearance="tint">GitHub content</Badge>
           <Badge appearance="outline">{items.length} articles</Badge>
+          <Button appearance="subtle" size="small" onClick={() => setRefreshNonce((value) => value + 1)}>
+            Refresh feed
+          </Button>
         </div>
       </header>
 
@@ -85,7 +91,12 @@ export function NewsDocument() {
         <div className="news-error">
           <strong>Daily News could not load.</strong>
           <span>{error}</span>
-          <a href={CONTENT_BASE_URL} target="_blank" rel="noreferrer">Open content source</a>
+          <div className="news-error-actions">
+            <Button appearance="primary" size="small" onClick={() => setRefreshNonce((value) => value + 1)}>
+              Try again
+            </Button>
+            <a href={CONTENT_BASE_URL} target="_blank" rel="noreferrer">Open content source</a>
+          </div>
         </div>
       ) : null}
 

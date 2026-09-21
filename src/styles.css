@@ -410,3 +410,13 @@ body { overflow: hidden; }
 }
 
 .news-error-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+
+@media (max-width: 600px) {
+  .topbar { gap: 6px; padding-inline: 7px; }
+  .brand { width: auto; }
+  .brand > span:last-child { display: none; }
+  .quick-input-wrap { min-width: 0; }
+  .quick-input kbd { display: none; }
+  .topbar > .fui-Button { min-width: 32px; padding-inline: 7px; font-size: 0; }
+}

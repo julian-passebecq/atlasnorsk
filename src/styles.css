@@ -43,14 +43,34 @@ body { overflow: hidden; }
 .brand > span:last-child { display: grid; line-height: 1.1; }
 .brand strong { font-size: 13px; }
 .brand small { color: var(--muted); font-size: 9px; margin-top: 2px; }
+.quick-input-wrap {
+  position: relative; min-width: 220px; max-width: 620px; flex: 1;
+}
 .quick-input {
-  height: 30px; min-width: 220px; max-width: 620px; flex: 1;
+  height: 30px; width: 100%;
   display: flex; align-items: center; gap: 7px; padding: 0 9px;
   border: 1px solid var(--line-strong); border-radius: 6px; background: var(--subtle);
 }
+.quick-input:focus-within { border-color: #8ab8df; box-shadow: 0 0 0 1px #8ab8df; background: #fff; }
 .quick-input svg { color: var(--muted); }
 .quick-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 11px; }
-.quick-input kbd { color: #7b838b; border: 1px solid var(--line); background: #fff; border-radius: 4px; padding: 1px 5px; font-size: 9px; }
+.quick-input kbd { color: #7b838b; border: 1px solid var(--line); background: #fff; border-radius: 4px; padding: 1px 5px; font-size: 9px; white-space: nowrap; }
+.quick-results {
+  position: absolute; z-index: 30; top: 34px; left: 0; right: 0;
+  max-height: 310px; overflow: auto; border: 1px solid var(--line-strong); border-radius: 7px;
+  background: #fff; box-shadow: 0 10px 28px rgb(31 41 51 / 14%);
+}
+.quick-result {
+  width: 100%; display: flex; align-items: center; gap: 9px; min-height: 44px;
+  padding: 7px 9px; border: 0; border-bottom: 1px solid #edf0f2; background: #fff; color: #34434e; text-align: left;
+}
+.quick-result:last-child { border-bottom: 0; }
+.quick-result:hover, .quick-result:focus-visible { background: #edf6fc; outline: 0; }
+.quick-result-icon { width: 20px; height: 20px; display: grid; place-items: center; color: var(--accent); flex: 0 0 auto; }
+.quick-result-copy { min-width: 0; display: grid; gap: 2px; }
+.quick-result-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.quick-result-copy small { color: #7a848d; font-size: 8px; }
+.quick-no-results { padding: 12px; color: #7a848d; font-size: 10px; }
 
 .app-body { display: grid; grid-template-columns: 252px minmax(0, 1fr) 250px; min-height: 0; }
 .library, .inspector { min-height: 0; background: var(--surface); display: flex; flex-direction: column; }

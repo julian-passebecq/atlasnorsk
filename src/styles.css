@@ -378,3 +378,5 @@ body { overflow: hidden; }
   .news-reader-heading { flex-direction: column; }
   .news-learning-grid { grid-template-columns: 1fr; }
 }
+
+.news-error-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }

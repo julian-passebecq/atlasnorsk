@@ -30,3 +30,8 @@ export function preferredResourceForWorkspace(
     ?? allResources.find((resource) => resource.workspace === workspace)
     ?? null;
 }
+
+
+export function workspaceNames(resources: Resource[]): string[] {
+  return [...new Set(resources.map((resource) => resource.workspace))];
+}

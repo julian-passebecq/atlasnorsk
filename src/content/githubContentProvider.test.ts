@@ -36,6 +36,9 @@ const article = {
     url: 'https://example.com',
     language: 'en',
   },
+  rights: {
+    storageMode: 'public-domain',
+  },
   sections: [{ id: 's1', norsk: 'Dette er en test.' }],
   vocabulary: [],
   grammar: [],
@@ -119,6 +122,38 @@ describe('GitHub content provider', () => {
     );
 
     await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Unsupported news article');
+  });
+
+  it('requires explicit rights metadata', async () => {
+    const { rights: _rights, ...withoutRights } = article;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(withoutRights), { status: 200 }),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article');
+  });
+
+  it('rejects source text in link-only news content', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...article,
+            rights: { storageMode: 'link-only' },
+            sections: [{ id: 's1', norsk: 'Dette er en test.', sourceText: 'Publisher text' }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow(
+      'Link-only news article must not store source text',
+    );
   });
 
   it('rejects unsafe source URL protocols', async () => {

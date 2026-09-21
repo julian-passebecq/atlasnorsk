@@ -84,8 +84,8 @@ function TopBar({
         <input aria-label="Quick translate or search" placeholder="Translate, correct or search Norwegian..." />
         <kbd>⌘ K</kbd>
       </div>
-      <Button appearance="primary" icon={<Add20Regular />} onClick={() => onOpen(resources[0])}>
-        New
+      <Button appearance="primary" icon={<Document20Regular />} onClick={() => onOpen(resources[0])}>
+        Translate
       </Button>
     </header>
   );
@@ -183,6 +183,8 @@ function TabStrip({
   closeTab,
   split,
   toggleSplit,
+  onAddTab,
+  canAddTab,
 }: {
   tabs: Resource[];
   activeId: string;
@@ -190,6 +192,8 @@ function TabStrip({
   closeTab: (id: string) => void;
   split: boolean;
   toggleSplit: () => void;
+  onAddTab: () => void;
+  canAddTab: boolean;
 }) {
   return (
     <div className="tab-strip">
@@ -219,7 +223,15 @@ function TabStrip({
             </button>
           </div>
         ))}
-        <button className="add-tab" aria-label="New document tab"><Add20Regular /></button>
+        <button
+          className="add-tab"
+          aria-label="Open another resource"
+          title={canAddTab ? 'Open next resource in this workspace' : 'All workspace resources are open'}
+          onClick={onAddTab}
+          disabled={!canAddTab}
+        >
+          <Add20Regular />
+        </button>
       </div>
       <div className="tab-actions">
         <Tooltip content={split ? 'Close split pane' : 'Split workspace'} relationship="label">
@@ -800,6 +812,9 @@ export function App() {
     setActiveWorkspace(resource.workspace);
   };
 
+  const nextWorkspaceResource = resourcesForWorkspace(resources, activeWorkspace)
+    .find((resource) => !tabs.some((tab) => tab.id === resource.id));
+
   const closeTab = (id: string) => {
     if (tabs.length === 1) return;
 
@@ -838,6 +853,10 @@ export function App() {
               closeTab={closeTab}
               split={split}
               toggleSplit={() => setSplit((value) => !value)}
+              onAddTab={() => {
+                if (nextWorkspaceResource) openResource(nextWorkspaceResource);
+              }}
+              canAddTab={Boolean(nextWorkspaceResource)}
             />
             <div className="breadcrumb">
               <span>{active.workspace}</span>

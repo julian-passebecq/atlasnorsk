@@ -27,3 +27,22 @@ We keep at most a few high-value reference books:
 Other spreadsheet material is converted into its natural AtlasNorsk resource type: Vocabulary, Grammar, Phrase/Oral, Course or Cheat Sheet.
 
 See `docs/CONTENT_IMPORT_AUDIT.md` for the uploaded-content audit and `tools/import_tablebook.py` for the offline converter.
+
+
+## Live content repository
+
+AtlasNorsk reads AI-generated learning content from:
+
+https://github.com/julian-passebecq/atlasnorsk-content
+
+Daily News is fetched at runtime from the `main` branch manifest, so publishing a new validated JSON article does not require rebuilding the application.
+
+The content repository owns:
+- daily news articles;
+- future vocabulary/grammar content packs;
+- table-book payloads;
+- phrase packs;
+- course content;
+- content schemas and validation.
+
+The application repository owns UI, local workspace state, rendering and editing behavior.

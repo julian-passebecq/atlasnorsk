@@ -91,7 +91,34 @@ describe('GitHub content provider', () => {
     await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Unsupported news article');
   });
 
-  it('surfaces HTTP failures with the requested path', async () => {
+  it('rejects structurally incomplete articles', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ...article, sections: undefined }), { status: 200 }),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article');
+  });
+
+  it('falls back to last-known-good cached content on network failure', async () => {
+    const cache = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => cache.get(key) ?? null,
+      setItem: (key: string, value: string) => cache.set(key, value),
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(manifest), { status: 200 }))
+      .mockRejectedValueOnce(new Error('offline'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(loadDailyNewsManifest()).resolves.toEqual(manifest);
+    await expect(loadDailyNewsManifest()).resolves.toEqual(manifest);
+  });
+
+  it('surfaces HTTP failures when no cached copy exists', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response('', { status: 404 })),

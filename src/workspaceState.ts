@@ -75,3 +75,18 @@ export function searchResources(resources: Resource[], query: string): Resource[
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .map((entry) => entry.resource);
 }
+
+
+export function secondaryResourceForTabs(
+  tabs: Resource[],
+  secondaryId: string,
+  activeId: string,
+): Resource | null {
+  return tabs.find((tab) => tab.id === secondaryId && tab.id !== activeId)
+    ?? tabs.find((tab) => tab.id !== activeId)
+    ?? null;
+}
+
+export function canSplitWorkspace(tabs: Resource[]): boolean {
+  return tabs.length >= 2;
+}

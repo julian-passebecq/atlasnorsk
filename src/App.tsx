@@ -29,10 +29,10 @@ import { grammarGroups, grammarTopics } from './grammar';
 import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import { NewsDocument } from './news';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, workspaceNames } from './workspaceState';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
-const workspaces = ['Daily Norwegian', 'B2 Preparation', 'Her på berget', 'Work Norwegian'] as const;
+const workspaces = workspaceNames(resources);
 
 const resourceIcon: Record<ResourceType, ReactNode> = {
   translation: <Document20Regular />,

@@ -119,6 +119,22 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function isSafeContentPath(value: string) {
+  return value.startsWith('content/daily-news/')
+    && !value.includes('..')
+    && !value.includes('://')
+    && !value.startsWith('/');
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 function assertManifest(value: unknown): asserts value is ContentManifest {
   if (!value || typeof value !== 'object') {
     throw new Error('Invalid Daily News manifest: expected object');
@@ -139,6 +155,7 @@ function assertManifest(value: unknown): asserts value is ContentManifest {
       || !isNonEmptyString(item.date)
       || !isNonEmptyString(item.level)
       || !Array.isArray(item.themes)
+      || !isSafeContentPath(item.path)
     ) {
       throw new Error('Invalid Daily News manifest item');
     }
@@ -162,6 +179,7 @@ function assertNewsArticle(value: unknown): asserts value is NewsArticle {
     || !article.source
     || !isNonEmptyString(article.source.publisher)
     || !isNonEmptyString(article.source.url)
+    || !isHttpUrl(article.source.url)
     || !Array.isArray(article.sections)
     || !Array.isArray(article.vocabulary)
     || !Array.isArray(article.grammar)

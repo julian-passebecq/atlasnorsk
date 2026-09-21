@@ -34,6 +34,17 @@ import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType
 
 const workspaces = workspaceNames(resources);
 
+function requireResource(id: string): Resource {
+  const resource = resources.find((candidate) => candidate.id === id);
+  if (!resource) throw new Error(`Missing required AtlasNorsk resource: ${id}`);
+  return resource;
+}
+
+const dailyTranslationResource = requireResource('translation-daily');
+const dailyNewsResource = requireResource('news-daily');
+const transportVocabularyResource = requireResource('vocab-transport');
+const initialTabs = [dailyTranslationResource, dailyNewsResource, transportVocabularyResource];
+
 const resourceIcon: Record<ResourceType, ReactNode> = {
   translation: <Document20Regular />,
   news: <Document20Regular />,
@@ -158,7 +169,7 @@ function TopBar({
         ) : null}
       </div>
 
-      <Button appearance="primary" icon={<Document20Regular />} onClick={() => onOpen(resources[0])}>
+      <Button appearance="primary" icon={<Document20Regular />} onClick={() => onOpen(dailyTranslationResource)}>
         Translate
       </Button>
     </header>
@@ -775,14 +786,14 @@ function GenericDocument({ resource }: { resource: Resource }) {
 }
 
 function ResourceDocument({ resource }: { resource: Resource }) {
-  if (resource.type === 'translation') return <TranslationDocument />;
-  if (resource.type === 'news') return <NewsDocument />;
-  if (resource.type === 'vocabulary') return <VocabularyDocument />;
-  if (resource.type === 'cheatsheet') return <CheatSheetDocument />;
-  if (resource.type === 'grammar') return <GrammarDocument resource={resource} />;
-  if (resource.type === 'tablebook') return <TableBookDocument resource={resource} />;
-  if (resource.type === 'phrases') return <PhraseDocument resource={resource} />;
-  return <GenericDocument resource={resource} />;
+  if (resource.type === 'translation') return <TranslationDocument key={resource.id} />;
+  if (resource.type === 'news') return <NewsDocument key={resource.id} />;
+  if (resource.type === 'vocabulary') return <VocabularyDocument key={resource.id} />;
+  if (resource.type === 'cheatsheet') return <CheatSheetDocument key={resource.id} />;
+  if (resource.type === 'grammar') return <GrammarDocument key={resource.id} resource={resource} />;
+  if (resource.type === 'tablebook') return <TableBookDocument key={resource.id} resource={resource} />;
+  if (resource.type === 'phrases') return <PhraseDocument key={resource.id} resource={resource} />;
+  return <GenericDocument key={resource.id} resource={resource} />;
 }
 
 function Inspector({ resource }: { resource: Resource }) {
@@ -859,12 +870,12 @@ function Inspector({ resource }: { resource: Resource }) {
 
 export function App() {
   const [activeWorkspace, setActiveWorkspace] = useState<string>('Daily Norwegian');
-  const [tabs, setTabs] = useState<Resource[]>([resources[0], resources[1], resources[2]]);
-  const [activeId, setActiveId] = useState(resources[0].id);
+  const [tabs, setTabs] = useState<Resource[]>(initialTabs);
+  const [activeId, setActiveId] = useState(dailyTranslationResource.id);
   const [split, setSplit] = useState(false);
-  const [secondaryId, setSecondaryId] = useState(resources[2].id);
+  const [secondaryId, setSecondaryId] = useState(transportVocabularyResource.id);
 
-  const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? resources[0];
+  const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? dailyTranslationResource;
   const secondary = secondaryResourceForTabs(tabs, secondaryId, active.id);
 
   const activateTab = (id: string) => {

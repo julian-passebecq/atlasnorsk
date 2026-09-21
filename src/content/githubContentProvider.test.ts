@@ -125,6 +125,57 @@ describe('GitHub content provider', () => {
     await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article');
   });
 
+  it('rejects malformed nested vocabulary entries', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...article,
+            vocabulary: [{ term: 'øving', type: 'Noun', level: 'B3', english: 'practice', french: 'entraînement' }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article vocabulary');
+  });
+
+  it('rejects malformed grammar entries', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...article,
+            grammar: [{ topic: 'V2', example: '' }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article grammar');
+  });
+
+  it('rejects malformed useful phrases', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...article,
+            usefulPhrases: [{ norsk: 'i tillegg', english: 'in addition', french: '' }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article phrase');
+  });
+
   it('rejects structurally incomplete articles', async () => {
     vi.stubGlobal(
       'fetch',

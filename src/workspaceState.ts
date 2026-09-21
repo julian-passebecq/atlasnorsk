@@ -19,3 +19,14 @@ export function nextActiveResourceAfterClose(
 
   return tabs[closingIndex + 1] ?? tabs[closingIndex - 1] ?? null;
 }
+
+
+export function preferredResourceForWorkspace(
+  openTabs: Resource[],
+  allResources: Resource[],
+  workspace: string,
+): Resource | null {
+  return openTabs.find((resource) => resource.workspace === workspace)
+    ?? allResources.find((resource) => resource.workspace === workspace)
+    ?? null;
+}

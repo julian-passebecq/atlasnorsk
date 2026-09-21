@@ -35,3 +35,43 @@ export function preferredResourceForWorkspace(
 export function workspaceNames(resources: Resource[]): string[] {
   return [...new Set(resources.map((resource) => resource.workspace))];
 }
+
+
+function foldSearch(value: string): string {
+  return value
+    .toLocaleLowerCase('nb-NO')
+    .replaceAll('æ', 'ae')
+    .replaceAll('ø', 'o')
+    .replaceAll('å', 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+export function searchResources(resources: Resource[], query: string): Resource[] {
+  const needle = foldSearch(query);
+  if (!needle) return [];
+
+  return resources
+    .map((resource, index) => {
+      const title = foldSearch(resource.title);
+      const haystack = foldSearch([
+        resource.title,
+        resource.type,
+        resource.workspace,
+        resource.category ?? '',
+        resource.level ?? '',
+      ].join(' '));
+
+      let score = 0;
+      if (title === needle) score += 100;
+      else if (title.startsWith(needle)) score += 60;
+      else if (title.includes(needle)) score += 40;
+      if (haystack.includes(needle)) score += 10;
+
+      return { resource, score, index };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((entry) => entry.resource);
+}

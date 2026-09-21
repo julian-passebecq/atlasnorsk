@@ -80,6 +80,23 @@ describe('GitHub content provider', () => {
     await expect(loadDailyNewsManifest()).rejects.toThrow('Unsupported Daily News manifest');
   });
 
+  it('rejects manifest paths outside the Daily News content tree', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...manifest,
+            items: [{ ...manifest.items[0], path: 'https://example.com/evil.json' }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadDailyNewsManifest()).rejects.toThrow('Invalid Daily News manifest item');
+  });
+
   it('rejects unsupported article types', async () => {
     vi.stubGlobal(
       'fetch',
@@ -89,6 +106,23 @@ describe('GitHub content provider', () => {
     );
 
     await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Unsupported news article');
+  });
+
+  it('rejects unsafe source URL protocols', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...article,
+            source: { ...article.source, url: 'javascript:alert(1)' },
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(loadNewsArticle(manifest.items[0].path)).rejects.toThrow('Invalid news article');
   });
 
   it('rejects structurally incomplete articles', async () => {

@@ -2,6 +2,7 @@ import type { CheatSheetSkeleton, Resource, TranslationExample, VocabularyEntry 
 
 export const resources: Resource[] = [
   { id: 'translation-daily', title: 'Daily translation', type: 'translation', workspace: 'Daily Norwegian', level: 'B1', category: 'Daily life', updatedAt: 'Today' },
+  { id: 'news-daily', title: 'Daily News', type: 'news', workspace: 'Daily Norwegian', category: 'News', updatedAt: 'Live' },
   { id: 'vocab-transport', title: 'Transport vocabulary', type: 'vocabulary', workspace: 'Daily Norwegian', level: 'B1', category: 'Transport', updatedAt: 'Today' },
   { id: 'cheat-connectors', title: 'B2 connectors', type: 'cheatsheet', workspace: 'B2 Preparation', level: 'B2', category: 'Grammar', updatedAt: 'Today' },
   { id: 'grammar-hub', title: 'Grammar', type: 'grammar', workspace: 'B2 Preparation', category: 'Grammar', updatedAt: 'Today' },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resources } from './data';
-import { nextActiveResourceAfterClose, resourcesForWorkspace } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace } from './workspaceState';
 
 describe('workspace state', () => {
   it('scopes library resources to the selected workspace', () => {
@@ -28,5 +28,17 @@ describe('workspace state', () => {
     const next = nextActiveResourceAfterClose(tabs, resources[9].id, resources[9].id);
     expect(next?.id).toBe(resources[3].id);
     expect(next?.workspace).toBe('B2 Preparation');
+  });
+
+  it('prefers an already-open tab when switching workspaces', () => {
+    const tabs = [resources[0], resources[4], resources[9]];
+    const next = preferredResourceForWorkspace(tabs, resources, 'B2 Preparation');
+    expect(next?.id).toBe(resources[4].id);
+  });
+
+  it('falls back to the first catalog resource when a workspace has no open tab', () => {
+    const tabs = [resources[0], resources[1], resources[2]];
+    const next = preferredResourceForWorkspace(tabs, resources, 'Her på berget');
+    expect(next?.id).toBe('course-hpb-07');
   });
 });

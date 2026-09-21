@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resources } from './data';
-import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace } from './workspaceState';
+import { nextActiveResourceAfterClose, preferredResourceForWorkspace, resourcesForWorkspace, workspaceNames } from './workspaceState';
 
 describe('workspace state', () => {
   it('scopes library resources to the selected workspace', () => {
@@ -40,5 +40,14 @@ describe('workspace state', () => {
     const tabs = [resources[0], resources[1], resources[2]];
     const next = preferredResourceForWorkspace(tabs, resources, 'Her på berget');
     expect(next?.id).toBe('course-hpb-07');
+  });
+
+  it('derives the workspace switcher from catalog data without duplicates', () => {
+    expect(workspaceNames(resources)).toEqual([
+      'Daily Norwegian',
+      'B2 Preparation',
+      'Work Norwegian',
+      'Her på berget',
+    ]);
   });
 });

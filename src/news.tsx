@@ -65,7 +65,7 @@ export function NewsDocument() {
     setArticle(null);
     setArticleStatus('loading');
     setArticleError('');
-    loadNewsArticle(selected.path)
+    loadNewsArticle(selected.path, selected)
       .then((value) => {
         if (!active) return;
         setArticle(value);

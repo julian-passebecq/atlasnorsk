@@ -27,6 +27,7 @@ import {
 } from '@fluentui/react-icons';
 import { connectorSkeleton, resources, translation, vocabulary } from './data';
 import { grammarGroups, grammarTopics } from './grammar';
+import { oralListeningPhrases, phraseSections } from './phrases';
 import { tableBookForResource } from './tablebooks';
 import type { CefrLevel, Resource, ResourceType, VocabularyEntry, VocabularyType } from './model';
 
@@ -586,6 +587,70 @@ function TableBookDocument({ resource }: { resource: Resource }) {
   );
 }
 
+function PhraseDocument({ resource }: { resource: Resource }) {
+  const [section, setSection] = useState<string>('All');
+  const [query, setQuery] = useState('');
+  const isOral = resource.id === 'phrases-b2-oral';
+  const rows = isOral
+    ? oralListeningPhrases.filter((entry) =>
+        (section === 'All' || entry.section === section)
+        && (!query || normalize([entry.norsk, entry.english, entry.type, entry.use, entry.example].join(' ')).includes(normalize(query))),
+      )
+    : oralListeningPhrases.slice(0, 0);
+
+  if (!isOral) return <GenericDocument resource={resource} />;
+
+  return (
+    <article className="document phrase-document">
+      <header className="document-heading compact">
+        <div>
+          <span className="eyebrow">PHRASE / ORAL COLLECTION · B2</span>
+          <h1>B2 Oral & Listening</h1>
+          <p>Useful language is grouped by function: response, clarification, fillers, academic/news vocabulary and nuanced spoken connectors.</p>
+        </div>
+        <Badge appearance="tint">{rows.length} items</Badge>
+      </header>
+
+      <div className="phrase-toolbar">
+        <Input
+          contentBefore={<Search20Regular />}
+          value={query}
+          onChange={(_, data) => setQuery(data.value)}
+          placeholder="Search expressions, function or example…"
+        />
+        <Select value={section} onChange={(event) => setSection(event.currentTarget.value)}>
+          {phraseSections.map((value) => <option key={value}>{value}</option>)}
+        </Select>
+      </div>
+
+      <div className="phrase-list">
+        {rows.map((entry) => (
+          <article className="phrase-card" key={entry.id}>
+            <div className="phrase-main">
+              <div>
+                <span className="phrase-section">{entry.section}</span>
+                <h2 lang="nb">{entry.form ? `${entry.form} ` : ''}{entry.norsk}</h2>
+                <p>{entry.english}</p>
+              </div>
+              <Badge appearance={entry.priority === 'High' ? 'tint' : 'outline'}>{entry.priority}</Badge>
+            </div>
+            <div className="phrase-meta">
+              <span>{entry.type}</span>
+              <span>{entry.use}</span>
+            </div>
+            <div className="phrase-example" lang="nb">{entry.example}</div>
+            <div className="grammar-card-actions">
+              <Button appearance="subtle" size="small">Add to vocabulary</Button>
+              <Button appearance="subtle" size="small">More examples</Button>
+              <Button appearance="subtle" size="small">Practice orally</Button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function GenericDocument({ resource }: { resource: Resource }) {
   return (
     <article className="document generic-document">
@@ -613,6 +678,7 @@ function ResourceDocument({ resource }: { resource: Resource }) {
   if (resource.type === 'cheatsheet') return <CheatSheetDocument />;
   if (resource.type === 'grammar') return <GrammarDocument resource={resource} />;
   if (resource.type === 'tablebook') return <TableBookDocument resource={resource} />;
+  if (resource.type === 'phrases') return <PhraseDocument resource={resource} />;
   return <GenericDocument resource={resource} />;
 }
 
@@ -627,7 +693,9 @@ function Inspector({ resource }: { resource: Resource }) {
           ? ['Explain rule', 'Generate examples', 'Compare patterns', 'Build cheat sheet', 'Find related vocabulary']
           : resource.type === 'tablebook'
             ? ['Search table', 'Convert row to vocabulary', 'Send row to grammar', 'Create cheat sheet', 'View import source']
-            : ['Explain', 'Generate examples', 'Find related resources'];
+            : resource.type === 'phrases'
+              ? ['Explain nuance', 'Generate variants', 'Practice orally', 'Add to vocabulary', 'Build phrase sheet']
+              : ['Explain', 'Generate examples', 'Find related resources'];
 
   return (
     <aside className="inspector">
